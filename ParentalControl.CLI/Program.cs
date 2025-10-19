@@ -22,15 +22,15 @@ namespace ParentalControl.CLI
 
             var myAppLogger = loggerFactory.CreateLogger<MyApp>();
 
-            // подключаем дочерние модули
-            IOperatingSystem winOs = new WindowsOS();
+            var environmentName = Environment.GetEnvironmentVariable("DOTNET_ENVIRONMENT") ?? "Production"; // Default to Production if not set
 
             // собираем конфигурационные настройки
             IConfiguration configuration =
                 new ConfigurationBuilder()
                     .SetBasePath(Directory.GetCurrentDirectory())
                     .AddJsonFile("appsettings.json", optional: false, reloadOnChange: false)
-                    //.AddEnvironmentVariables()
+                    .AddJsonFile($"appsettings.{environmentName}.json", optional: true, reloadOnChange: true)
+                    .AddEnvironmentVariables()
                     .Build();
 
             var serviceCollection = new ServiceCollection();
@@ -41,6 +41,9 @@ namespace ParentalControl.CLI
             ServiceProvider serviceProvider = serviceCollection.BuildServiceProvider();
 
             IOptions<MyAppConfiguration> myAppOptions = serviceProvider.GetService<IOptions<MyAppConfiguration>>();
+
+            // подключаем дочерние модули
+            IOperatingSystem winOs = new WindowsOS();
 
             // получаем окончательный экземпляр нашего приложения со всеми зависимостями
             var myApp = new MyApp(myAppOptions, winOs, myAppLogger);
